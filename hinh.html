@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Puzzle Hình Ảnh</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin-top: 50px;
+        background: #f4f4f4;
+      }
+      .puzzle-container {
+        width: 300px;
+        height: 300px;
+        margin: 20px auto;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(3, 1fr);
+        gap: 2px;
+        border: 3px solid #333;
+        user-select: none;
+      }
+      .tile {
+        background-image: url("https://picsum.photos/id/237/300/300");
+        background-size: 300px 300px;
+        cursor: grab;
+        transition: transform 0.2s ease;
+        border: 1px solid #aaa;
+      }
+      .tile.empty {
+        background: #fff;
+        cursor: default;
+      }
+      button {
+        padding: 10px 20px;
+        font-size: 16px;
+        margin-top: 10px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Puzzle Hình Ảnh - Kéo</h1>
+    <div class="puzzle-container" id="puzzle"></div>
+    <button onclick="shufflePuzzle()">🔀 Trộn hình</button>
+
+    <script>
+      const puzzle = document.getElementById("puzzle");
+      let tileOrder = []; // Chỉ lưu vị trí, còn element sẽ tạo lại mỗi lần render
+      let dragIndex = null;
+
+      function createTile(index) {
+        const tile = document.createElement("div");
+        tile.classList.add("tile");
+        tile.dataset.index = index;
+
+        if (index === 8) {
+          tile.classList.add("empty");
+        } else {
+          const row = Math.floor(index / 3);
+          const col = index % 3;
+          tile.style.backgroundPosition = `-${col * 100}px -${row * 100}px`;
+        }
+
+        tile.setAttribute("draggable", !tile.classList.contains("empty"));
+
+        tile.addEventListener("dragstart", () => {
+          if (!tile.classList.contains("empty")) {
+            dragIndex = tileOrder.indexOf(index);
+          }
+        });
+
+        tile.addEventListener("dragover", (e) => {
+          e.preventDefault();
+        });
+
+        tile.addEventListener("drop", () => {
+          const dropIndex = tileOrder.indexOf(index);
+          const emptyIndex = tileOrder.findIndex((i) => i === 8);
+          const neighbors = getNeighbors(emptyIndex);
+          if (neighbors.includes(dragIndex)) {
+            [tileOrder[dragIndex], tileOrder[emptyIndex]] = [
+              tileOrder[emptyIndex],
+              tileOrder[dragIndex],
+            ];
+            renderPuzzle();
+            checkWin();
+          }
+          dragIndex = null;
+        });
+
+        return tile;
+      }
+
+      function renderPuzzle() {
+        puzzle.innerHTML = "";
+        tileOrder.forEach((index) => {
+          const tile = createTile(index);
+          puzzle.appendChild(tile);
+        });
+      }
+
+      function getNeighbors(index) {
+        const neighbors = [];
+        const row = Math.floor(index / 3);
+        const col = index % 3;
+
+        if (row > 0) neighbors.push(index - 3);
+        if (row < 2) neighbors.push(index + 3);
+        if (col > 0) neighbors.push(index - 1);
+        if (col < 2) neighbors.push(index + 1);
+
+        return neighbors;
+      }
+
+      function shufflePuzzle() {
+        for (let i = 0; i < 100; i++) {
+          const emptyIndex = tileOrder.findIndex((i) => i === 8);
+          const neighbors = getNeighbors(emptyIndex);
+          const rand = neighbors[Math.floor(Math.random() * neighbors.length)];
+          [tileOrder[emptyIndex], tileOrder[rand]] = [
+            tileOrder[rand],
+            tileOrder[emptyIndex],
+          ];
+        }
+        renderPuzzle();
+      }
+
+      function checkWin() {
+        for (let i = 0; i < 9; i++) {
+          if (tileOrder[i] !== i) return;
+        }
+        setTimeout(() => alert("🎉 Bạn đã hoàn thành hình!"), 100);
+      }
+
+      function initPuzzle() {
+        tileOrder = [...Array(9).keys()]; // [0,1,...,8]
+        renderPuzzle();
+      }
+
+      initPuzzle();
+    </script>
+  </body>
+</html>
